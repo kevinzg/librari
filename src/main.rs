@@ -1,6 +1,7 @@
 use std::env;
 use std::sync::Arc;
 
+use askama::Template;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::Html;
@@ -36,8 +37,19 @@ async fn main() {
     axum::serve(listener, router).await.unwrap();
 }
 
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate {
+    title: String,
+    n: usize,
+}
+
 async fn handle_index(State(state): State<Arc<AppState>>) -> Html<String> {
-    return Html(format!("Hello, I have {} books!", state.books.len()));
+    let hello = IndexTemplate {
+        title: "My books".to_string(),
+        n: state.books.len(),
+    };
+    return Html(hello.render().unwrap());
 }
 
 async fn handle_books(
