@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-Hello, I have <strong>{{ n }}</strong> books!
+    {% for book in books %}
+        <h2>{{ book }}</h2>
+    {% endfor %}a
 {% endblock %}

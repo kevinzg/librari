@@ -39,15 +39,15 @@ async fn main() {
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct IndexTemplate {
+struct IndexTemplate<'a> {
     title: String,
-    n: usize,
+    books: &'a Vec<String>,
 }
 
 async fn handle_index(State(state): State<Arc<AppState>>) -> Html<String> {
     let hello = IndexTemplate {
         title: "My books".to_string(),
-        n: state.books.len(),
+        books: &state.books,
     };
     return Html(hello.render().unwrap());
 }
