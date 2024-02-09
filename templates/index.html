@@ -2,6 +2,8 @@
 
 {% block content %}
     {% for book in books %}
-        <h2>{{ book }}</h2>
-    {% endfor %}a
+        <h2>{{ book.title }}</h2>
+        <p>{{ book.authors }}</p>
+        <img width='100' src="/books/{{loop.index0}}/cover" />
+    {% endfor %}
 {% endblock %}
