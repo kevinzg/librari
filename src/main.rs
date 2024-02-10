@@ -36,7 +36,7 @@ async fn main() {
     let shared_state = Arc::new(Mutex::new(AppState { books }));
 
     let router = axum::Router::new()
-        .route("/", get(handle_index))
+        .route("/", get(handle_home))
         .route("/books/:id", get(handle_book_index))
         .route("/books/:id/cover", get(handle_cover))
         .route("/books/:id/res/*path", get(handle_book_resource))
@@ -50,14 +50,14 @@ async fn main() {
 }
 
 #[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate<'a> {
+#[template(path = "home.html")]
+struct HomeTemplate<'a> {
     title: String,
     books: &'a Vec<Book>,
 }
 
-async fn handle_index(State(state): State<Arc<Mutex<AppState>>>) -> Html<String> {
-    let hello = IndexTemplate {
+async fn handle_home(State(state): State<Arc<Mutex<AppState>>>) -> Html<String> {
+    let hello = HomeTemplate {
         title: "My books".to_string(),
         books: &state.lock().unwrap().books,
     };
