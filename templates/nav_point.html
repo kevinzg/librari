@@ -1,0 +1,15 @@
+<li>
+    {% if res.len() > 0 %}
+        <a href="{{ book_path }}/res/{{ res }}" >{{ label|escape("html") }}</a>
+    {% else %}
+        {{ label|escape("html") }}
+    {% endif %}
+
+    {% if children.len() > 0 %}
+        <ul>
+            {% for child in children %}
+                {{ child.render().unwrap() }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</li>

@@ -1,6 +1,7 @@
 use std::env;
 use std::fs::File;
 use std::io::BufReader;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use askama::Template;
@@ -8,7 +9,7 @@ use axum::extract::Path;
 use axum::http::{header, StatusCode};
 use axum::response::{Html, IntoResponse};
 use axum::{extract::State, routing::get};
-use epub::doc::EpubDoc;
+use epub::doc::{EpubDoc, NavPoint};
 
 struct AppState {
     books: Vec<Book>,
@@ -36,7 +37,7 @@ async fn main() {
 
     let router = axum::Router::new()
         .route("/", get(handle_index))
-        .route("/books/:id", get(handle_books))
+        .route("/books/:id", get(handle_book_index))
         .route("/books/:id/cover", get(handle_cover))
         .with_state(shared_state);
 
@@ -62,14 +63,63 @@ async fn handle_index(State(state): State<Arc<Mutex<AppState>>>) -> Html<String>
     return Html(hello.render().unwrap());
 }
 
-async fn handle_books(
+#[derive(Template)]
+#[template(path = "book_index.html", escape = "none")]
+struct BookIndexTemplate<'a> {
+    title: &'a String,
+    toc: NavPointTemplate<'a>,
+}
+
+#[derive(Template)]
+#[template(path = "nav_point.html", escape = "none")]
+struct NavPointTemplate<'a> {
+    label: &'a str,
+    res: String,
+    children: Vec<NavPointTemplate<'a>>,
+    book_path: &'a str,
+}
+
+async fn handle_book_index(
     Path(id): Path<u64>,
     State(state): State<Arc<Mutex<AppState>>>,
 ) -> Result<Html<String>, (StatusCode, &'static str)> {
     state.lock().unwrap().books.get(id as usize).map_or_else(
         || Err((StatusCode::NOT_FOUND, "Book not found")),
-        |book| Ok(Html(book.title.to_owned())),
+        |book| {
+            return Ok(Html(
+                BookIndexTemplate {
+                    title: &book.title,
+                    toc: make_nav_point_template(
+                        &NavPoint {
+                            label: "Table of contents".to_owned(),
+                            play_order: 0,
+                            content: PathBuf::new(),
+                            children: book.doc.toc.clone(),
+                        },
+                        &format!("/books/{}", id),
+                    ),
+                }
+                .render()
+                .unwrap(),
+            ));
+        },
     )
+}
+
+fn make_nav_point_template<'a>(
+    nav_point: &'a NavPoint,
+    book_path: &'a str,
+) -> NavPointTemplate<'a> {
+    return NavPointTemplate {
+        label: &nav_point.label,
+        res: nav_point.content.to_str().unwrap().to_owned(),
+        children: nav_point
+            .children
+            .iter()
+            .map(|e| make_nav_point_template(e, book_path))
+            .collect(),
+        book_path,
+    };
 }
 
 async fn handle_cover(
