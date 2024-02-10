@@ -39,6 +39,7 @@ async fn main() {
         .route("/", get(handle_index))
         .route("/books/:id", get(handle_book_index))
         .route("/books/:id/cover", get(handle_cover))
+        .route("/books/:id/res/*path", get(handle_book_resource))
         .with_state(shared_state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8007")
@@ -104,6 +105,26 @@ async fn handle_book_index(
             ));
         },
     )
+}
+
+async fn handle_book_resource(
+    Path((id, res_path)): Path<(u64, String)>,
+    State(state): State<Arc<Mutex<AppState>>>,
+) -> Result<Html<String>, (StatusCode, &'static str)> {
+    state
+        .lock()
+        .unwrap()
+        .books
+        .get_mut(id as usize)
+        .map_or_else(
+            || Err((StatusCode::NOT_FOUND, "Book not found")),
+            |book| {
+                book.doc.get_resource_str_by_path(res_path).map_or_else(
+                    || Err((StatusCode::NOT_FOUND, "Resource not found")),
+                    |content| Ok(Html(content)),
+                )
+            },
+        )
 }
 
 fn make_nav_point_template<'a>(
