@@ -54,7 +54,7 @@ struct IndexTemplate<'a> {
     books: &'a Vec<Book>,
 }
 
-async fn handle_index<'a>(State(state): State<Arc<Mutex<AppState>>>) -> Html<String> {
+async fn handle_index(State(state): State<Arc<Mutex<AppState>>>) -> Html<String> {
     let hello = IndexTemplate {
         title: "My books".to_string(),
         books: &state.lock().unwrap().books,
@@ -62,7 +62,7 @@ async fn handle_index<'a>(State(state): State<Arc<Mutex<AppState>>>) -> Html<Str
     return Html(hello.render().unwrap());
 }
 
-async fn handle_books<'a>(
+async fn handle_books(
     Path(id): Path<u64>,
     State(state): State<Arc<Mutex<AppState>>>,
 ) -> Result<Html<String>, (StatusCode, &'static str)> {
@@ -72,10 +72,9 @@ async fn handle_books<'a>(
     )
 }
 
-async fn handle_cover<'a>(
+async fn handle_cover(
     Path(id): Path<u64>,
     State(state): State<Arc<Mutex<AppState>>>,
-    // ) -> Result<Response<Vec<u8>>, (StatusCode, &'static str)> {
 ) -> impl IntoResponse {
     let mut state = state.lock().unwrap();
     let book = state.books.get_mut(id as usize).unwrap();
@@ -83,7 +82,7 @@ async fn handle_cover<'a>(
     return ([(header::CONTENT_TYPE, cover.1)], cover.0);
 }
 
-fn get_books<'a>(dir: &'a str) -> Vec<Book> {
+fn get_books(dir: &str) -> Vec<Book> {
     let books: Vec<Book> = walkdir::WalkDir::new(dir)
         .max_depth(3) // enough to run on Calibre's library
         .into_iter()
@@ -94,7 +93,7 @@ fn get_books<'a>(dir: &'a str) -> Vec<Book> {
     books
 }
 
-fn read_epub<'a>(path: &std::path::Path) -> Result<Book, String> {
+fn read_epub(path: &std::path::Path) -> Result<Book, String> {
     let doc = EpubDoc::new(path).map_err(|e| e.to_string())?;
     if let Some(title) = doc.mdata("title") {
         return Ok(Book {
