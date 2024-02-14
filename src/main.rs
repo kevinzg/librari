@@ -134,10 +134,13 @@ async fn handle_book_resource(
     let Ok((_, mut doc)) = get_epub_doc(&slug, &state) else {
         return (StatusCode::NOT_FOUND, "Book not found").into_response();
     };
-    let Some(content) = doc.get_resource_str_by_path(res_path) else {
+    let Some(content) = doc.get_resource_by_path(&res_path) else {
         return (StatusCode::NOT_FOUND, "Resource not found").into_response();
     };
-    return Html(content).into_response();
+    let mime = doc
+        .get_resource_mime_by_path(res_path)
+        .unwrap_or("application/octet-stream".to_owned());
+    return (StatusCode::OK, [(header::CONTENT_TYPE, mime)], content).into_response();
 }
 
 async fn handle_cover(
