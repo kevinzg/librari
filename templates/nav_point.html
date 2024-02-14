@@ -1,6 +1,6 @@
 <li>
     {% if res.len() > 0 %}
-        <a href="{{ book_path }}/res/{{ res }}" >{{ label|escape("html") }}</a>
+        <a href="{{ book_path }}/{{ res }}" >{{ label|escape("html") }}</a>
     {% else %}
         {{ label|escape("html") }}
     {% endif %}

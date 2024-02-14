@@ -2,10 +2,13 @@
 
 {% block content %}
     {% for book in books %}
-    <a href="/books/{{loop.index0}}">
+    <a href="/{{book.slug}}">
         <h2>{{ book.title }}</h2>
         <p>{{ book.authors }}</p>
-        <img width='100' src="/books/{{loop.index0}}/cover" />
+        <p>{{ book.year }}</p>
+        {%if book.has_cover %}
+            <img width='100' src="/{{book.slug}}/cover" />
+        {% endif %}
     </a>
     {% endfor %}
 {% endblock %}
