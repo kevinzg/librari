@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use askama::Template;
 use axum::extract::Path;
 use axum::http::{header, StatusCode};
-use axum::response::{Html, IntoResponse};
+use axum::response::{Html, IntoResponse, Response};
 use axum::{extract::State, routing::get};
 use epub::doc::{EpubDoc, NavPoint};
 
@@ -96,7 +96,7 @@ async fn handle_home(State(state): State<Arc<Mutex<AppState>>>) -> impl IntoResp
 async fn handle_book_index(
     Path(slug): Path<String>,
     State(state): State<Arc<Mutex<AppState>>>,
-) -> axum::response::Response {
+) -> Response {
     let state = state.lock().unwrap();
 
     let Ok((title, doc)) = get_epub_doc(&slug, &state) else {
@@ -129,7 +129,7 @@ async fn handle_book_index(
 async fn handle_book_resource(
     Path((slug, res_path)): Path<(String, String)>,
     State(state): State<Arc<Mutex<AppState>>>,
-) -> axum::response::Response {
+) -> Response {
     let state = state.lock().unwrap();
     let Ok((_, mut doc)) = get_epub_doc(&slug, &state) else {
         return (StatusCode::NOT_FOUND, "Book not found").into_response();
@@ -143,8 +143,10 @@ async fn handle_book_resource(
 async fn handle_cover(
     Path(slug): Path<String>,
     State(state): State<Arc<Mutex<AppState>>>,
-) -> impl IntoResponse {
-    let id = utils::extract_id(&slug);
+) -> Response {
+    let Ok(id) = utils::extract_id(&slug) else {
+        return (StatusCode::NOT_FOUND, "Invalid ID").into_response();
+    };
     let state = state.lock().unwrap();
     let path = state
         .db
@@ -162,11 +164,7 @@ async fn handle_cover(
         } else if png.is_file() {
             png
         } else {
-            return (
-                StatusCode::NOT_FOUND,
-                [(header::CONTENT_TYPE, "text/plain; charset=utf-8")],
-                "Cover not found".as_bytes().to_vec(),
-            );
+            return (StatusCode::NOT_FOUND, "Cover not found").into_response();
         }
     };
 
@@ -184,14 +182,16 @@ async fn handle_cover(
         _ => "application/octet-stream",
     };
 
-    return (StatusCode::OK, [(header::CONTENT_TYPE, content_type)], data);
+    return (StatusCode::OK, [(header::CONTENT_TYPE, content_type)], data).into_response();
 }
 
 fn get_epub_doc(
     slug: &str,
     state: &AppState,
 ) -> Result<(String, EpubDoc<BufReader<File>>), &'static str> {
-    let id = utils::extract_id(&slug);
+    let Ok(id) = utils::extract_id(&slug) else {
+        return Err("Invalid ID");
+    };
     let (title, path) = state
         .db
         .query_row("SELECT title, path FROM books WHERE id = ?", [id], |row| {
