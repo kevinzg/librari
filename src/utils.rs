@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 pub fn slugify(input: &str) -> String {
     input
         .chars()
@@ -12,11 +14,10 @@ pub fn slugify(input: &str) -> String {
         .collect()
 }
 
-pub fn extract_id(input: &str) -> Result<u64, &'static str> {
+pub fn extract_id(input: &str) -> Result<usize, ParseIntError> {
     input
         .chars()
         .take_while(|&c| c.is_ascii_digit())
         .collect::<String>()
         .parse()
-        .map_err(|_| "Invalid ID")
 }
