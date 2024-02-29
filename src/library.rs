@@ -65,6 +65,11 @@ impl Library {
         slug: &str,
         res_path: &str,
     ) -> Result<(String, Vec<u8>), LibraryError> {
+        // No need to open the epub file to get the cover
+        if (res_path == "cover") {
+            return self.get_cover(slug);
+        }
+        // Other resources need to be read from the epub file
         let info = self.get_book_info(slug)?;
         let binding = self.get_epub_doc(&info)?;
         let mut doc = binding.lock().unwrap();
@@ -78,6 +83,35 @@ impl Library {
         Ok((mime, content))
     }
 
+    pub fn get_cover(&self, slug: &str) -> Result<(String, Vec<u8>), LibraryError> {
+        let info = self.get_book_info(slug)?;
+        let cover_path = {
+            let jpg = info.path.join("cover.jpg");
+            let png = info.path.join("cover.png");
+            if jpg.is_file() {
+                jpg
+            } else if png.is_file() {
+                png
+            } else {
+                return Err(LibraryError::NotFound);
+            }
+        };
+        let data = {
+            let file = File::open(&cover_path).map_err(|e| LibraryError::Io(e))?;
+            let mut reader = BufReader::new(file);
+            let mut buf = Vec::new();
+            reader
+                .read_to_end(&mut buf)
+                .map_err(|e| LibraryError::Io(e))?;
+            buf
+        };
+        let mime = match cover_path.extension().map(|e| e.to_str()).flatten() {
+            Some("jpg") => "image/jpeg",
+            Some("png") => "image/png",
+            _ => "application/octet-stream",
+        };
+        Ok((mime.to_owned(), data))
+    }
     /// Get the book info from the database
     fn get_book_info(&self, slug: &str) -> Result<BookInfo, LibraryError> {
         let id = get_id(slug)?;
