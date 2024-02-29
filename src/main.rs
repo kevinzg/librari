@@ -1,8 +1,5 @@
-#![allow(dead_code)]
-#![allow(unused)]
-
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::extract::Path;
 use axum::http::{header, StatusCode};

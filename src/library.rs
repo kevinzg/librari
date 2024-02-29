@@ -1,14 +1,9 @@
-#![allow(dead_code)]
-#![allow(unused)]
-
-use epub::doc::{EpubDoc, NavPoint};
+use epub::doc::NavPoint;
 use std::{
-    cell::RefCell,
     fs::File,
     io::{BufReader, Read},
     num::NonZeroUsize,
     path::{Path, PathBuf},
-    rc::Rc,
     sync::{Arc, Mutex},
 };
 
@@ -66,7 +61,7 @@ impl Library {
         res_path: &str,
     ) -> Result<(String, Vec<u8>), LibraryError> {
         // No need to open the epub file to get the cover
-        if (res_path == "cover") {
+        if res_path == "cover" {
             return self.get_cover(slug);
         }
         // Other resources need to be read from the epub file
@@ -215,20 +210,6 @@ pub enum LibraryError {
     Io(std::io::Error),
     Epub(epub::doc::DocError),
     Sqlite(rusqlite::Error),
-}
-
-pub enum ImageType {
-    JPEG,
-    PNG,
-}
-
-impl ImageType {
-    pub fn to_mime_type(&self) -> &'static str {
-        match self {
-            Self::JPEG => "image/jpeg",
-            Self::PNG => "image/png",
-        }
-    }
 }
 
 fn get_id(slug: &str) -> Result<usize, LibraryError> {
