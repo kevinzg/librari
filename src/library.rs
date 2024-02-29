@@ -112,6 +112,34 @@ impl Library {
         };
         Ok((mime.to_owned(), data))
     }
+
+    /// Get the table of contents of a book
+    /// NOTE: There's the "spine" and the "toc".
+    /// The spine is the order of the chapters in the book (e.g. for the next/prev buttons)
+    /// This function uses the "toc".
+    ///
+    /// The "toc" is a tree, but this function returns a flat list of items to avoid
+    /// having to deal with recursion in the HTML template.
+    pub fn get_book_index(&self, slug: &str) -> Result<(String, Vec<IndexItem>), LibraryError> {
+        let info = self.get_book_info(slug)?;
+        let binding = self.get_epub_doc(&info)?;
+        let doc = binding.lock().unwrap();
+
+        let mut index = Vec::new();
+        let mut stack: Vec<(&NavPoint, u32)> = doc.toc.iter().rev().map(|nav| (nav, 0)).collect();
+
+        while let Some((nav, level)) = stack.pop() {
+            index.push(IndexItem {
+                label: nav.label.clone(),
+                path: nav.content.clone(),
+                level,
+            });
+            stack.extend(nav.children.iter().rev().map(|nav| (nav, level + 1)));
+        }
+
+        Ok((info.title, index))
+    }
+
     /// Get the book info from the database
     fn get_book_info(&self, slug: &str) -> Result<BookInfo, LibraryError> {
         let id = get_id(slug)?;
