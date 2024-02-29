@@ -120,8 +120,14 @@ impl Library {
     }
 }
 
-pub struct Book<'b> {
-    title: &'b str,
+#[derive(Debug)]
+pub struct Book {
+    pub id: u64,
+    pub slug: String,
+    pub title: String,
+    pub authors: String,
+    pub year: String,
+    pub has_cover: bool,
 }
 
 struct BookInfo {
@@ -133,6 +139,12 @@ struct BookInfo {
 
     /// Book title
     title: String,
+}
+
+pub struct IndexItem {
+    pub label: String,
+    pub path: PathBuf,
+    pub level: u32,
 }
 
 pub enum LibraryError {
