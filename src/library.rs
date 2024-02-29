@@ -51,7 +51,7 @@ impl Library {
             .unwrap()
             .map(|r| r.unwrap())
             .collect();
-        return Ok(books);
+        Ok(books)
     }
 
     /// Get any resource from the epub file
@@ -70,7 +70,7 @@ impl Library {
         let mut doc = binding.lock().unwrap();
         let content = doc
             // TODO: Make this method not need a mutable reference to self
-            .get_resource_by_path(&res_path)
+            .get_resource_by_path(res_path)
             .ok_or(LibraryError::NotFound)?;
         let mime = doc
             .get_resource_mime_by_path(res_path)
@@ -92,15 +92,13 @@ impl Library {
             }
         };
         let data = {
-            let file = File::open(&cover_path).map_err(|e| LibraryError::Io(e))?;
+            let file = File::open(&cover_path).map_err(LibraryError::Io)?;
             let mut reader = BufReader::new(file);
             let mut buf = Vec::new();
-            reader
-                .read_to_end(&mut buf)
-                .map_err(|e| LibraryError::Io(e))?;
+            reader.read_to_end(&mut buf).map_err(LibraryError::Io)?;
             buf
         };
-        let mime = match cover_path.extension().map(|e| e.to_str()).flatten() {
+        let mime = match cover_path.extension().and_then(|e| e.to_str()) {
             Some("jpg") => "image/jpeg",
             Some("png") => "image/png",
             _ => "application/octet-stream",
@@ -147,12 +145,12 @@ impl Library {
                 let path: String = row.get(1)?;
                 Ok(BookInfo {
                     id,
-                    path: self.base_path.join(&path),
+                    path: self.base_path.join(path),
                     title,
                 })
             })
-            .map_err(|e| LibraryError::Sqlite(e))?;
-        return Ok(info);
+            .map_err(LibraryError::Sqlite)?;
+        Ok(info)
     }
 
     /// Get the epub document from the cache or load it from the file system
@@ -169,11 +167,11 @@ impl Library {
     fn load_epub_doc(&self, path: &Path) -> Result<Epub, LibraryError> {
         let epub_path = path
             .read_dir()
-            .map_err(|e| LibraryError::Io(e))?
+            .map_err(LibraryError::Io)?
             .filter_map(|f| f.ok().map(|e| e.path()))
             .find(|p| p.extension().map_or(false, |e| e == "epub"))
             .ok_or(LibraryError::NotFound)?;
-        Epub::new(epub_path).map_err(|e| LibraryError::Epub(e))
+        Epub::new(epub_path).map_err(LibraryError::Epub)
     }
 }
 

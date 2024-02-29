@@ -52,7 +52,7 @@ async fn handle_home(State(state): State<Arc<AppState>>) -> Response {
     let Ok(books) = library.list_books() else {
         return (StatusCode::INTERNAL_SERVER_ERROR, "Error listing books").into_response();
     };
-    return Html(templates::render_home(&books)).into_response();
+    Html(templates::render_home(&books)).into_response()
 }
 
 async fn handle_book_index(
@@ -63,7 +63,7 @@ async fn handle_book_index(
     let Ok((title, book_index)) = library.get_book_index(&slug) else {
         return (StatusCode::NOT_FOUND, "Book not found").into_response();
     };
-    return Html(templates::render_book_index(title, &book_index, &slug)).into_response();
+    Html(templates::render_book_index(title, &book_index, &slug)).into_response()
 }
 
 async fn handle_book_resource(
@@ -74,10 +74,10 @@ async fn handle_book_resource(
     let Ok((content_type, content)) = library.get_resource(&slug, &res_path) else {
         return (StatusCode::NOT_FOUND, "Book not found").into_response();
     };
-    return (
+    (
         StatusCode::OK,
         [(header::CONTENT_TYPE, content_type)],
         content,
     )
-        .into_response();
+        .into_response()
 }

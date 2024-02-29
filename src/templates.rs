@@ -4,19 +4,19 @@ use askama::Template;
 pub fn render_home(books: &Vec<Book>) -> String {
     let home = HomeTemplate {
         title: "My books",
-        books: &books,
+        books,
     };
-    return home.render().unwrap();
+    home.render().unwrap()
 }
 
 pub fn render_book_index(title: String, book_index: &Vec<IndexItem>, book_slug: &str) -> String {
-    return (BookIndexTemplate {
+    (BookIndexTemplate {
         title: &title,
-        items: &book_index,
+        items: book_index,
         book_slug,
     })
     .render()
-    .unwrap();
+    .unwrap()
 }
 
 #[derive(Template)]
