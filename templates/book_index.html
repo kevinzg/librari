@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>{{ title|escape("html") }}</h1>
+    <h1>{{ title }}</h1>
 
-    {{ toc.render().unwrap() }}
+    {% for item in items %}
+    <li style="padding-left: {{ item.level }}em;"><a href="{{ book_slug }}/{{ item.path.display() }}">{{ item.label }}</a></li>
+    {% endfor %}
 {% endblock %}
 
