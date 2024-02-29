@@ -35,8 +35,28 @@ impl Library {
     }
 
     /// List all books in the library
-    pub fn list_books(&self, slug: &str) -> Option<Vec<Book>> {
-        todo!()
+    pub fn list_books(&self) -> Result<Vec<Book>, LibraryError> {
+        let binding = self.db.lock().unwrap();
+        let mut stmt = binding
+            .prepare("SELECT id, title, author_sort, strftime('%Y', pubdate) as year, sort, has_cover FROM books")
+            .unwrap();
+        let books: Vec<Book> = stmt
+            .query_map((), |row| {
+                let id = row.get(0)?;
+                let sort_title: String = row.get(4)?;
+                Ok(Book {
+                    id,
+                    slug: format!("{}-{}", id, utils::slugify(&sort_title)),
+                    title: row.get(1)?,
+                    authors: row.get(2)?,
+                    year: row.get(3)?,
+                    has_cover: row.get(5)?,
+                })
+            })
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        return Ok(books);
     }
 
     /// Get any resource from the epub file
