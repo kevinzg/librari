@@ -15,22 +15,39 @@ struct StaticFile {
     etag: String, // TODO: How can I make it &'static str?
 }
 
+// TODO: Make a macro for this
 lazy_static! {
     static ref ASSETS: HashMap<&'static str, StaticFile> = {
-        let mut map: HashMap<&'static str, StaticFile> = HashMap::new();
-        // TODO: compress this file?
-        let content = include_bytes!("../assets/modern-normalize.css");
-        let mut hasher = md5::Md5::new();
-        hasher.update(content);
-        let etag = format!("\"{:x}\"", hasher.finalize());
-        map.insert(
-            "modern-normalize.css",
+        let reset_css_file = {
+            // TODO: compress this file?
+            let content = include_bytes!("../assets/modern-normalize.css");
+            let mut hasher = md5::Md5::new();
+            hasher.update(content);
+            let etag = format!("\"{:x}\"", hasher.finalize());
             StaticFile {
                 content_type: "text/css",
                 content,
                 etag: etag.to_owned(),
-            },
-        );
+            }
+        };
+
+        // TODO: Not sure if I can make a function for this
+        //       assuming include_bytes! doesn't work with variables
+        let page_css_file = {
+            let content = include_bytes!("../assets/page.css");
+            let mut hasher = md5::Md5::new();
+            hasher.update(content);
+            let etag = format!("\"{:x}\"", hasher.finalize());
+            StaticFile {
+                content_type: "text/css",
+                content,
+                etag: etag.to_owned(),
+            }
+        };
+
+        let mut map: HashMap<&'static str, StaticFile> = HashMap::new();
+        map.insert("modern-normalize.css", reset_css_file);
+        map.insert("page.css", page_css_file);
         map
     };
 }
@@ -66,6 +83,7 @@ async fn main() {
         .route("/", get(handle_home))
         .route("/:slug", get(handle_book_index))
         .route("/:slug/cover", get(handle_book_cover))
+        .route("/:slug/*page", get(handle_book_page))
         .route("/_/:slug/*path", get(handle_book_resource))
         .route("/assets/*path", get(handle_assets))
         .with_state(shared_state);
@@ -114,6 +132,18 @@ async fn handle_book_cover(
         content,
     )
         .into_response()
+}
+
+async fn handle_book_page(
+    Path((slug, res_path)): Path<(String, String)>,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    let library = &state.library;
+    let Ok(book_info) = library.get_book_info(&slug) else {
+        return (StatusCode::NOT_FOUND, "Book not found").into_response();
+    };
+
+    Html(templates::render_page(&book_info.title, &slug, &res_path)).into_response()
 }
 
 async fn handle_book_resource(
