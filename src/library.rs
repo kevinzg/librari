@@ -60,10 +60,6 @@ impl Library {
         slug: &str,
         res_path: &str,
     ) -> Result<(String, Vec<u8>), LibraryError> {
-        // No need to open the epub file to get the cover
-        if res_path == "cover" {
-            return self.get_cover(slug);
-        }
         // Other resources need to be read from the epub file
         let info = self.get_book_info(slug)?;
         let binding = self.get_epub_doc(&info)?;

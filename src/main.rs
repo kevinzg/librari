@@ -65,7 +65,8 @@ async fn main() {
     let router = axum::Router::new()
         .route("/", get(handle_home))
         .route("/:slug", get(handle_book_index))
-        .route("/:slug/*path", get(handle_book_resource))
+        .route("/:slug/cover", get(handle_book_cover))
+        .route("/_/:slug/*path", get(handle_book_resource))
         .route("/assets/*path", get(handle_assets))
         .with_state(shared_state);
 
@@ -96,6 +97,25 @@ async fn handle_book_index(
     Html(templates::render_book_index(title, &book_index, &slug)).into_response()
 }
 
+async fn handle_book_cover(
+    Path(slug): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    let library = &state.library;
+    let Ok((content_type, content)) = library.get_cover(&slug) else {
+        return (StatusCode::NOT_FOUND, "Book not found").into_response();
+    };
+    (
+        StatusCode::OK,
+        [
+            (header::CONTENT_TYPE, content_type.as_ref()),
+            (header::CACHE_CONTROL, "private, max-age=2592000"), // 30 days
+        ],
+        content,
+    )
+        .into_response()
+}
+
 async fn handle_book_resource(
     Path((slug, res_path)): Path<(String, String)>,
     State(state): State<Arc<AppState>>,
@@ -108,8 +128,7 @@ async fn handle_book_resource(
         StatusCode::OK,
         [
             (header::CONTENT_TYPE, content_type.as_ref()),
-            // TODO: I might need a way to implement cache busting if I update my books
-            (header::CACHE_CONTROL, "private, max-age=2592000") // 30 days
+            (header::CACHE_CONTROL, "private, max-age=3600"),
         ],
         content,
     )
