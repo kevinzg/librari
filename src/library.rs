@@ -130,7 +130,7 @@ impl Library {
     }
 
     /// Get the book info from the database
-    fn get_book_info(&self, slug: &str) -> Result<BookInfo, LibraryError> {
+    pub fn get_book_info(&self, slug: &str) -> Result<BookInfo, LibraryError> {
         let id = get_id(slug)?;
         let info = self
             .db
@@ -181,15 +181,15 @@ pub struct Book {
     pub has_cover: bool,
 }
 
-struct BookInfo {
+pub struct BookInfo {
     /// Book id
-    id: usize,
+    pub id: usize,
 
     /// Path to the directory on Calibre's library, not to the epub
-    path: PathBuf,
+    pub path: PathBuf,
 
     /// Book title
-    title: String,
+    pub title: String,
 }
 
 pub struct IndexItem {
