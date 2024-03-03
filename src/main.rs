@@ -106,7 +106,11 @@ async fn handle_book_resource(
     };
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, content_type)],
+        [
+            (header::CONTENT_TYPE, content_type.as_ref()),
+            // TODO: I might need a way to implement cache busting if I update my books
+            (header::CACHE_CONTROL, "private, max-age=2592000") // 30 days
+        ],
         content,
     )
         .into_response()
