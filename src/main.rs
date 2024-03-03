@@ -139,11 +139,11 @@ async fn handle_book_page(
     State(state): State<Arc<AppState>>,
 ) -> Response {
     let library = &state.library;
-    let Ok(book_info) = library.get_book_info(&slug) else {
+    let Ok(chapter_info) = library.get_chapter_info(&slug, &res_path) else {
         return (StatusCode::NOT_FOUND, "Book not found").into_response();
     };
 
-    Html(templates::render_page(&book_info.title, &slug, &res_path)).into_response()
+    Html(templates::render_page(&chapter_info, &slug, &res_path)).into_response()
 }
 
 async fn handle_book_resource(

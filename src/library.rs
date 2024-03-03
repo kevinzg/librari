@@ -149,6 +149,37 @@ impl Library {
         Ok(info)
     }
 
+    /// Get chapter info
+    pub fn get_chapter_info(
+        &self,
+        slug: &str,
+        res_path: &str,
+    ) -> Result<ChapterInfo, LibraryError> {
+        let info = self.get_book_info(slug)?;
+        let binding = self.get_epub_doc(&info)?;
+        let doc = binding.lock().unwrap();
+        let Some(chapter_id) = doc.resource_uri_to_chapter(&PathBuf::from(res_path)) else {
+            return Err(LibraryError::NotFound);
+        };
+        Ok(ChapterInfo {
+            prev_page: {
+                if chapter_id == 0 {
+                    None
+                } else {
+                    doc.spine
+                        .get(chapter_id - 1)
+                        .and_then(|p| doc.resources.get(p).and_then(|r| Some(r.0.clone())))
+                }
+            },
+            next_page: {
+                doc.spine
+                    .get(chapter_id + 1)
+                    .and_then(|p| doc.resources.get(p).and_then(|r| Some(r.0.clone())))
+            },
+            book_info: info,
+        })
+    }
+
     /// Get the epub document from the cache or load it from the file system
     fn get_epub_doc(&self, info: &BookInfo) -> Result<Arc<Mutex<Epub>>, LibraryError> {
         let cache = &mut self.cache.lock().unwrap();
@@ -190,6 +221,12 @@ pub struct BookInfo {
 
     /// Book title
     pub title: String,
+}
+
+pub struct ChapterInfo {
+    pub prev_page: Option<PathBuf>,
+    pub next_page: Option<PathBuf>,
+    pub book_info: BookInfo,
 }
 
 pub struct IndexItem {

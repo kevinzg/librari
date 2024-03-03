@@ -1,4 +1,4 @@
-use crate::library::{Book, IndexItem};
+use crate::library::{Book, ChapterInfo, IndexItem};
 use askama::Template;
 
 pub fn render_home(books: &Vec<Book>) -> String {
@@ -19,11 +19,21 @@ pub fn render_book_index(title: String, book_index: &Vec<IndexItem>, book_slug: 
     .unwrap()
 }
 
-pub fn render_page(title: &str, book_slug: &str, res_path: &str) -> String {
+pub fn render_page(chapter_info: &ChapterInfo, book_slug: &str, res_path: &str) -> String {
+    let prev_page = chapter_info
+        .prev_page
+        .as_ref()
+        .and_then(|p| Some(p.to_str().unwrap()));
+    let next_page = chapter_info
+        .next_page
+        .as_ref()
+        .and_then(|p| Some(p.to_str().unwrap()));
     (PageTemplate {
-        title,
+        title: &chapter_info.book_info.title,
         slug: book_slug,
         res_path,
+        prev_page,
+        next_page,
     })
     .render()
     .unwrap()
@@ -50,4 +60,6 @@ struct PageTemplate<'a> {
     title: &'a str,
     slug: &'a str,
     res_path: &'a str,
+    prev_page: Option<&'a str>,
+    next_page: Option<&'a str>,
 }

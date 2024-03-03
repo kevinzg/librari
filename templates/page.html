@@ -7,4 +7,18 @@
 {% block content %}
 <iframe src="/_/{{ slug }}/{{ res_path }}">
 </iframe>
+
+<nav aria-label="Page navigation">
+    {% if prev_page.is_some() %}
+        <a rel="prev" href="/{{ slug }}/{{ prev_page.unwrap() }}" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+            &lt; Prev
+        </a>
+    {% endif %}
+
+    {% if next_page.is_some() %}
+        <a rel="next prefetch" href="/{{ slug }}/{{ next_page.unwrap() }}" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+            Next &gt;
+        </a>
+    {% endif %}
+</nav>
 {% endblock %}
