@@ -1,10 +1,39 @@
+use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
 use axum::extract::Path;
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Response};
 use axum::{extract::State, routing::get};
+use lazy_static::lazy_static;
+use md5::Digest;
+
+struct StaticFile {
+    content_type: &'static str,
+    content: &'static [u8],
+    etag: String, // TODO: How can I make it &'static str?
+}
+
+lazy_static! {
+    static ref ASSETS: HashMap<&'static str, StaticFile> = {
+        let mut map: HashMap<&'static str, StaticFile> = HashMap::new();
+        // TODO: compress this file?
+        let content = include_bytes!("../assets/modern-normalize.css");
+        let mut hasher = md5::Md5::new();
+        hasher.update(content);
+        let etag = format!("\"{:x}\"", hasher.finalize());
+        map.insert(
+            "modern-normalize.css",
+            StaticFile {
+                content_type: "text/css",
+                content,
+                etag: etag.to_owned(),
+            },
+        );
+        map
+    };
+}
 
 mod library;
 mod templates;
@@ -37,6 +66,7 @@ async fn main() {
         .route("/", get(handle_home))
         .route("/:slug", get(handle_book_index))
         .route("/:slug/*path", get(handle_book_resource))
+        .route("/assets/*path", get(handle_assets))
         .with_state(shared_state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8007")
@@ -78,6 +108,28 @@ async fn handle_book_resource(
         StatusCode::OK,
         [(header::CONTENT_TYPE, content_type)],
         content,
+    )
+        .into_response()
+}
+
+async fn handle_assets(Path(asset_path): Path<String>, headers: HeaderMap) -> Response {
+    let Some(file) = ASSETS.get(&*asset_path) else {
+        return (StatusCode::NOT_FOUND, "Asset not found").into_response();
+    };
+
+    if let Some(if_none_match) = headers.get(header::IF_NONE_MATCH) {
+        if if_none_match.as_ref() == file.etag.as_bytes() {
+            return (StatusCode::NOT_MODIFIED, ()).into_response();
+        }
+    }
+
+    (
+        StatusCode::OK,
+        [
+            (header::CONTENT_TYPE, file.content_type),
+            (header::ETAG, &file.etag),
+        ],
+        file.content,
     )
         .into_response()
 }
