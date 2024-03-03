@@ -7,7 +7,7 @@
         <p>{{ book.authors }}</p>
         <p>{{ book.year }}</p>
         {%if book.has_cover %}
-            <img width='100' src="/{{book.slug}}/cover" />
+            <img width='100' loading="lazy" src="/{{book.slug}}/cover" />
         {% endif %}
     </a>
     {% endfor %}
