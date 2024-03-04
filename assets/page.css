@@ -1,8 +1,4 @@
-html, body, #content, #content > iframe {
-    height: 100%;
-}
-
-#content > iframe {
-    width: 100%;
-    border: none;
+body {
+    max-width: 750px;
+    margin: 0 auto !important;
 }

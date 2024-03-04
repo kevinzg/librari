@@ -1,24 +1,66 @@
 {% extends "base.html" %}
 
 {% block head %}
-<link rel="stylesheet" href="/assets/page.css">
+<style>
+html, body, .container {
+    height: 100%;
+}
+
+iframe#book-content {
+    width: 100%;
+    margin: 0 auto;
+    border: none;
+    display: block;
+    flex-grow: 1;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+nav {
+    display: flex;
+    justify-content: space-around;
+}
+</style>
+
+<script>
+    function injectStyles(frame) {
+        const injectCssFile = (path) => {
+            const cssLink = document.createElement("link");
+            cssLink.href = path;
+            cssLink.rel = "stylesheet";
+            cssLink.type = "text/css";
+            frame.contentWindow.document.body.appendChild(cssLink);
+        }
+        injectCssFile("/assets/modern-normalize.css");
+        injectCssFile("/assets/page.css");
+    }
+</script>
 {% endblock %}
 
 {% block content %}
-<iframe src="/_/{{ slug }}/{{ res_path }}">
-</iframe>
+<div class="container">
+    <div>
+        {{ title }}
+    </div>
+    <iframe id="book-content" src="/_/{{ slug }}/{{ res_path }}" onload="injectStyles(this)">
+    </iframe>
 
-<nav aria-label="Page navigation">
-    {% if prev_page.is_some() %}
-        <a rel="prev" href="/{{ slug }}/{{ prev_page.unwrap() }}" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-            &lt; Prev
-        </a>
-    {% endif %}
+    <nav aria-label="Page navigation">
+        {% if prev_page.is_some() %}
+            <a rel="prev" href="/{{ slug }}/{{ prev_page.unwrap() }}" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                &lt; Prev
+            </a>
+        {% endif %}
 
-    {% if next_page.is_some() %}
-        <a rel="next prefetch" href="/{{ slug }}/{{ next_page.unwrap() }}" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-            Next &gt;
-        </a>
-    {% endif %}
-</nav>
+        {% if next_page.is_some() %}
+            <a rel="next prefetch" href="/{{ slug }}/{{ next_page.unwrap() }}" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                Next &gt;
+            </a>
+        {% endif %}
+    </nav>
+</div>
+
 {% endblock %}
